@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ritterlager Manager">
+  <rect width="512" height="512" rx="112" fill="#2B49E0"/>
+  <circle cx="256" cy="256" r="178" fill="#FFFFFF"/>
+  <path d="M162 379h188l-36-90H198l-36 90Z" fill="#2B49E0"/>
+  <path d="M237 289V118h30v171h-30Z" fill="#2B49E0"/>
+  <path d="M267 126h118l-31 49 31 49H267V126Z" fill="#2B49E0"/>
+  <path d="M94 370l61-108 61 108H94Z" fill="#1B2E8C"/>
+  <path d="M296 370l61-108 61 108H296Z" fill="#1B2E8C"/>
+  <circle cx="378" cy="138" r="26" fill="#0FDFA0"/>
+</svg>

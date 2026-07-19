@@ -1,48 +1,21 @@
-# Git-Deployment für Ritterlager Manager
+# Ritterlager Manager per Git deployen
 
-## Zielstruktur auf Plesk/Netcup
+Dieses Repository enthält den Code der App, aber keine produktiven Zugangsdaten und keine personenbezogenen Import-/Uploaddaten.
 
-Das Repository wird in den Projektordner deployed, nicht direkt in `public/`.
+## Nicht im Repository enthalten
 
-```text
-/var/www/vhosts/.../app.ritterlager.com/httpdocs/
-  app/
-  config/
-  database/
-  docs/
-  public/
-  routes/
-  scripts/
-  storage/
-```
+- `config/database.php`
+- `public/setup.php`
+- `public/migration.php`
+- `storage/logs/`
+- `storage/backups/`
+- `storage/uploads/`
+- `storage/imports/`
+- `storage/documents/`
+- `storage/import_sources/`
+- `storage/setup.lock`
 
-Der Document Root der Domain bleibt:
-
-```text
-httpdocs/public
-```
-
-## Nicht aus Git deployen
-
-Diese Dateien und Ordner gehören nicht ins Repository:
-
-```text
-config/database.php
-storage/logs/
-storage/backups/
-storage/uploads/
-storage/imports/
-storage/documents/
-storage/import_sources/
-storage/setup.lock
-public/setup.php
-public/migration.php
-```
-
-## Erstpush vom lokalen Rechner
-
-1. Das GitHub-Ready-ZIP lokal entpacken.
-2. Im entpackten Ordner ausführen:
+## Erstes Pushen zu GitHub
 
 ```bash
 git init
@@ -53,27 +26,44 @@ git remote add origin https://github.com/matzeisda/rttr.git
 git push -u origin main
 ```
 
-Falls schon Dateien im Repository liegen:
+Falls GitHub meldet, dass der Remote-Branch schon existiert:
 
 ```bash
 git pull origin main --allow-unrelated-histories
-git add .
-git commit -m "Import Ritterlager Manager v0.14.11"
-git push
+git push -u origin main
 ```
 
-## Nach jedem Deploy
+## Plesk-Struktur
 
-Migrationen ausführen:
+Der Code gehört nach:
 
-```bash
-php scripts/maintenance/migrate.php
+```text
+/var/www/vhosts/hosting203599.a2e6d.netcup.net/app.ritterlager.com/httpdocs
 ```
 
-Oder temporär per Browser:
+Der Document Root der Domain bleibt:
+
+```text
+httpdocs/public
+```
+
+Nicht den Document Root auf `httpdocs` setzen.
+
+## Produktive Dateien auf dem Server behalten
+
+Beim Deploy dürfen diese Dateien/Ordner auf dem Server nicht gelöscht oder überschrieben werden:
+
+```text
+config/database.php
+storage/
+```
+
+## Migrationen
+
+Nach einem Deploy temporär `public/migration.php` hochladen oder aus dem Serverbestand nutzen, Migration ausführen und danach wieder löschen:
 
 ```text
 https://app.ritterlager.com/migration.php
 ```
 
-Danach `public/migration.php` wieder löschen.
+Danach `public/migration.php` wieder entfernen.

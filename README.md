@@ -1,640 +1,548 @@
+# Ritterlager Manager v0.14.11
+
+Dieses Paket enthält den Hotfix für die fehlgeschlagene Migration 000026 (`installed_at` → `applied_at`).
+
+Nach dem Hochladen `https://app.ritterlager.com/migration.php` ausführen und danach `public/migration.php` wieder löschen.
+
 # Ritterlager Manager
 
-PHP 8.3 / MySQL-Webapp zur Verwaltung eines Ritterlagers beziehungsweise Zeltlagers. Die Anwendung bündelt Lagerjahre, Orden/Zelte, Personen, Mitarbeiter, Programm, Essen, Dienste, Punkte, Rangsystem, Importe, Backups und Betriebsfunktionen in einer webbasierten Oberfläche.
+Aktuelle Version: v0.14.5
 
-Aktueller Paketstand in dieser Unterhaltung: **v0.14.11**.
+Hinweis v0.14.5: Die Personensuche wurde repariert und Ränge werden aus dem letzten bekannten Lagerstatus als dauerhafter Rang angezeigt, wenn im aktiven Lagerjahr noch kein Rang gesetzt ist.
 
-## Ziel der Anwendung
+Hinweis v0.14.2: Ränge sind dauerhaft und können im Folgejahr nicht zurückgestuft werden. Küchendienst ist jetzt eine globale Ordens-/Zeltwertung. Bonus Freizeit ist eine persönliche Wertung mit max. 5 Punkten je Mitarbeiter, Teilnehmer, Tag und Freizeit-Slot.
 
-Der Ritterlager Manager ersetzt mehrere Excel-, Word- und Papierlisten durch eine zentrale Webapp. Er ist für die praktische Lagerorganisation gedacht: Lagerleitung, Bereichsleitungen und Mitarbeiter sollen auf dem Smartphone oder Desktop schnell sehen, was heute ansteht, welche Dienste offen sind, welche Teilnehmer zu welchem Orden/Zelt gehören und welche Punkte oder Bewertungen erfasst werden müssen.
+Der Ritterlager Manager ist eine mobile-first PWA zur Verwaltung des Ritterlagers. Die Anwendung soll Programm, Essen, Dienste, Personen, Orden/Zelte und später Ordnungspunkte abbilden.
 
-Die App ist bewusst keine allgemeine Vereinsverwaltung. Sie ist auf ein jährliches Lager mit festen Lagerjahren, Teilnehmern, Mitarbeitern, Orden/Zelten, Programmpunkten, Speiseplan, Diensten und einem eigenen Rang-/Punktesystem zugeschnitten.
+## Zweck
 
-## Wichtige Fachbegriffe
+Die Software unterstützt den Lageralltag. Sie ist keine allgemeine Vereinsverwaltung und kein generisches Admin-Tool.
 
-**Lagerjahr**  
-Ein Lagerjahr bildet eine konkrete Lagerdurchführung ab, zum Beispiel 2025 oder 2026. Viele Daten hängen am Lagerjahr: Teilnehmerstatus, Orden/Zelte, Programm, Essen, Dienste, Punkte und Auswertungen.
-
-**Aktives Lagerjahr**  
-Die meisten Ansichten beziehen sich automatisch auf das aktive Lagerjahr. Alte Lagerjahre bleiben für Historie, Import und Rangentwicklung erhalten.
-
-**Orden/Zelt**  
-Orden und Zelt sind in dieser App fachlich dasselbe Objekt. Beispiele sind Johanniter, Falkner, Samariter, Petrusker, Morgensternritter und Malteser. Ein Orden/Zelt kann Farbe, Kurzname, Teilnehmer und Mitarbeiterzuordnungen haben.
-
-**Person**  
-Eine Person kann Teilnehmer, Mitarbeiter oder beides sein. Personen enthalten Stammdaten wie Name, Geburtstag, Beiname, Kontaktdaten, Notfallkontakte, Hinweise, Allergien und Lagerstatus.
-
-**Lagerstatus**  
-Der Lagerstatus beschreibt die Rolle einer Person in einem bestimmten Lagerjahr: aktiv, Teilnehmer, Mitarbeiter, Orden/Zelt-Zuordnung, aktueller Rang, Folgerang und weitere lagerjahrbezogene Informationen.
-
-**Rangsystem**  
-Die App kennt Ritterlager-Ränge wie Knappe, Ritter, Freiherr, Graf, Markgraf, Landgraf, Fürst, Herzog und Großherzog. Ein erreichter Rang soll nicht durch spätere leere oder niedrigere Excel-Werte zurückgestuft werden.
-
-## Hauptfunktionen im Überblick
-
-- Login per Personenauswahl und PIN.
-- Rollen- und Rechteverwaltung für Admin, Lagerleitung, Bereichsleitung, Mitarbeiter und Lesen.
-- Mobile-first Oberfläche mit Sidebar auf Desktop und Bottom-Navigation auf Mobilgeräten.
-- PWA-Grundstruktur mit Manifest, Service Worker und Offline-Hinweis.
-- Verwaltung mehrerer Lagerjahre mit aktivem Lagerjahr.
-- Verwaltung von Orden/Zelten inklusive individueller Farben.
-- Personenverwaltung mit Teilnehmerdaten, Mitarbeiterstatus, Geburtsdaten, Beinamen, Notfallkontakten und sensiblen Hinweisen.
-- Programmplanung mit Tagesansicht, Kategorien, Orten, Verantwortlichen und wiederkehrenden Programmpunkten.
-- Speiseplan mit Mahlzeiten, Zutaten, Allergie-/Ernährungshinweisen und Küchenteam.
-- Dienste mit Diensttypen, Dienstzuordnungen und Dienstrotationen.
-- Punkteerfassung für Ordnung, Spiele, Zeltbewertung, Geschirr und Dienste.
-- Rang-, Prüfungs- und Lerneinheiten-Grundlage.
-- Import vorhandener Lagerdaten aus bereitgestellten Excel-/ODS-/DOCX-Dateien.
-- Backup-, WebDAV-, Cron- und Log-Grundfunktionen.
-- Öffentliche Setup- und Migrationshelfer für Plesk/Shared Hosting, die nach Nutzung wieder gelöscht werden müssen.
-
-## Seiten und Funktionen
-
-### Login
-
-Die App besitzt keinen klassischen E-Mail-Login. Benutzer melden sich über eine Personenauswahl und eine 4- bis 6-stellige PIN an. Das ist für den Lagerbetrieb auf Smartphones schneller und einfacher als ein normaler Benutzername/Passwort-Login.
-
-Funktionen:
-
-- Auswahl eines Benutzers aus der Benutzerliste.
-- PIN-Prüfung mit gehashten PINs.
-- Session-Rotation beim Login.
-- Schutz gegen wiederholte Fehlversuche.
-- Rollenbasierte Weiterleitung in die App.
-
-### App-Shell und Navigation
-
-Die Oberfläche ist für Desktop und Mobilgeräte optimiert. Auf großen Bildschirmen wird eine Sidebar verwendet, auf mobilen Geräten eine Bottom-Navigation.
-
-Typische Hauptbereiche:
-
-- Übersicht
-- Programm
-- Essen
-- Dienste
-- Ordnung/Punkte
-- Personen
-- Auswertungen/Ränge
-- Importe
-- System
-
-Die Navigation richtet sich nach den Rechten des angemeldeten Benutzers. Ein normaler Mitarbeiter sieht weniger Funktionen als Admin oder Lagerleitung.
-
-### Übersicht / Dashboard
-
-Die Übersicht ist der operative Startpunkt für den Lagertag. Sie zeigt die wichtigsten Informationen zum aktiven Lagerjahr komprimiert an.
-
-Funktionen:
-
-- Kennzahlen zum aktiven Lagerjahr.
-- Aktive Orden/Zelte mit Farbe und Teilnehmerzahlen.
-- Heutige beziehungsweise nächste Programmpunkte.
-- Essen des Tages.
-- Offene oder aktuelle Dienste.
-- Hinweise auf Geburtstage im Lagerzeitraum.
-- Schneller Einstieg in Tagesmodule.
-
-Ziel: Die Lagerleitung soll morgens sofort sehen, was ansteht, ohne mehrere Listen öffnen zu müssen.
-
-### Lagerjahre
-
-Lagerjahre bilden die zeitliche Klammer der App. Jedes Lagerjahr hat Start- und Enddatum. Viele Module filtern automatisch auf diesen Zeitraum.
-
-Funktionen:
-
-- Lagerjahr anlegen und verwalten.
-- Aktives Lagerjahr setzen.
-- Zeitraum des Lagers definieren.
-- Standardorden für neue Lagerjahre vorbereiten.
-- Tagesmodule auf den Lagerzeitraum begrenzen.
-
-Wichtig: Programm, Essen, Dienste und Punkte sollen nicht versehentlich außerhalb des Lagerzeitraums erfasst werden.
-
-### Orden / Zelte
-
-Orden und Zelte werden als eine fachliche Einheit behandelt. Diese Einheiten strukturieren Teilnehmer, Dienste, Punkte und Auswertungen.
-
-Funktionen:
-
-- Orden/Zelt anlegen, bearbeiten und aktivieren/deaktivieren.
-- Namen, Kurzzeichen und Farben pflegen.
-- Farbe in Dashboard, Personenlisten, Punkten und Auswertungen verwenden.
-- Mitarbeiter oder Verantwortliche einem Orden/Zelt zuordnen.
-- Standardorden automatisch für neue Lagerjahre anlegen.
-
-Standardorden:
-
-- Johanniter
-- Falkner
-- Samariter
-- Petrusker
-- Morgensternritter
-- Malteser
-
-### Personen & Lagerstatus
-
-Die Personenverwaltung ist der zentrale Datenbereich für Teilnehmer und Mitarbeiter. Personen sind lagerjahrübergreifend. Der Lagerstatus beschreibt, welche Rolle die Person in einem bestimmten Jahr hat.
-
-Funktionen:
-
-- Personen suchen und filtern.
-- Stammdaten verwalten: Name, Anzeigename, Geburtstag, Beiname, Adresse, Telefon, E-Mail.
-- Lagerstatus verwalten: aktiv, Teilnehmer, Mitarbeiter, Orden/Zelt, Rang, Folgerang.
-- Alter zum Lagerstart berechnen.
-- Geburtstage im Lagerzeitraum erkennen.
-- Notfallkontakte und Sorgeberechtigte erfassen.
-- Essenshinweise, Allergien, medizinische Hinweise und interne Bemerkungen pflegen.
-- Sensible Informationen nur mit passendem Recht anzeigen.
-- Personen aus Importen wiedererkennen und Dubletten vermeiden.
-
-Besondere Logik:
-
-- Personen können gleichzeitig in der Stammliste stehen und zusätzlich Benutzer/Mitarbeiter sein.
-- Der aktuelle Rang wird aus dem höchsten bekannten beziehungsweise letzten plausiblen Rang abgeleitet, wenn das aktive Lagerjahr fehlerhaft oder leer ist.
-- Ein höher erreichter Rang soll nicht durch einen niedrigeren späteren Wert verdeckt werden.
-
-### Programm
-
-Das Programmmodul verwaltet den Tagesablauf des Lagers. Programmpunkte können global oder einzelnen Orden/Zelten zugeordnet sein.
-
-Funktionen:
-
-- Programmpunkte pro Tag erfassen.
-- Uhrzeit, Titel, Beschreibung, Ort und Kategorie pflegen.
-- Verantwortliche Mitarbeiter hinterlegen.
-- Programmpunkte einzelnen Orden/Zelten zuordnen.
-- Wiederkehrende Programmpunkte markieren.
-- Timeline pro Lagertag anzeigen.
-- Nächsten Programmpunkt auf der Übersicht darstellen.
-- Import aus dem Word-Programm 2026.
-
-Beispiele für Kategorien:
-
-- Morgenprogramm
-- Essen/Pause
-- Ausbildung/Lerneinheit
-- Spiel
-- Freizeit
-- Abendprogramm
-- Dienst/Organisation
-
-### Essen / Speiseplan
-
-Das Essensmodul bildet den Speiseplan des Lagers ab. Es unterstützt Frühstück, Mittagessen, Abendessen und weitere Mahlzeiten.
-
-Funktionen:
-
-- Mahlzeiten pro Lagertag erfassen.
-- Mahlzeittyp, Uhrzeit, Beschreibung und Portionen verwalten.
-- Zutaten und Hinweise pflegen.
-- Vegetarische oder allergierelevante Hinweise erfassen.
-- Küchenteam oder Zuständigkeit dokumentieren.
-- Tagesessen auf der Übersicht anzeigen.
-- Import aus dem vorhandenen Speiseplan.
-
-Ziel: Küche und Lagerleitung sollen schnell sehen, was wann geplant ist und welche Hinweise relevant sind.
-
-### Dienste
-
-Das Dienstmodul verwaltet Aufgaben und Verantwortlichkeiten im Lageralltag.
-
-Typische Dienstarten:
-
-- Küchendienst
-- Spüldienst
-- Platzdienst
-- Nachtwache
-- Lagerfeuerdienst
-- Materialdienst
-- Kiosk
-- Feuerwart
-- Flaggenwart
-- Zeltwart
-- Sanitätsdienst
-- Lagerwart
-
-Funktionen:
-
-- Diensttypen verwalten.
-- Dienste pro Tag und Zeitbereich erfassen.
-- Personen oder Orden/Zelte zuordnen.
-- Dienstrotationen vorbereiten.
-- Offene Dienste anzeigen.
-- Von Diensten direkt in passende Punktebewertungen wechseln.
-- Import aus Aufgabenverteilung und Programm.
-
-Besondere Logik:
-
-- Platzdienst und Nachtwache können aus Programmdaten entstehen.
-- Die Aufgabenverteilung 2026 erzeugt Diensttypen und organisatorische Grundlage, aber nicht blind falsche Tagesdienste.
-
-### Ordnung / Punkte
-
-Das Punktesystem bildet die Lagerwertung ab. Es unterscheidet persönliche Punkte und Punkte für Orden/Zelte.
-
-Funktionen:
-
-- Punkte erfassen.
-- Punkte stornieren statt hart löschen.
-- Kategorien und Zielobjekte unterscheiden.
-- Punkte pro Person oder pro Orden/Zelt buchen.
-- Tages- und Gesamtauswertungen vorbereiten.
-
-Punktearten:
-
-- Ordnung Zelt: global pro Orden/Zelt.
-- Ordnung persönlich: persönliche Punkte.
-- Sauberkeit Geschirr: persönliche Punkte.
-- Prüfung: persönliche Punkte.
-- Spiele: global pro Orden/Zelt.
-- Platzdienst: global pro Orden/Zelt.
-- Küchendienst: global pro Orden/Zelt.
-- Bonus Freizeit: persönlich, begrenzt pro Mitarbeiter, Teilnehmer, Tag und Freizeit-Slot.
-
-### Punkte: Spielwertung
-
-Die Spielwertung ist für Wettbewerbe zwischen Orden/Zelten gedacht.
-
-Funktionen:
-
-- Platzierungen erfassen.
-- Mehrere Orden/Zelte je Platz erlauben.
-- Punkte je Platz vergeben, zum Beispiel 1. Platz = 5 Punkte, 2. Platz = 4 Punkte.
-- Spielpunkte als globale Ordens-/Zeltwertung speichern.
-
-### Punkte: Zeltbewertung
-
-Die Zeltbewertung dient der Ordnung oder Sauberkeit eines Zelts beziehungsweise Ordens.
-
-Funktionen:
-
-- Orden/Zelt auswählen.
-- Bewertung mit voreingestelltem Wert erfassen.
-- Plus/Minus-Anpassungen vornehmen.
-- Punkte für den Orden/das Zelt speichern.
-
-### Punkte: Geschirrbewertung
-
-Die Geschirrbewertung wird personenbezogen innerhalb eines Ordens/Zelts erfasst.
-
-Funktionen:
-
-- Orden/Zelt auswählen.
-- Kinder/Teilnehmer dieses Ordens anzeigen.
-- Voreinstellung pro Kind, zum Beispiel 5 Punkte.
-- Plus/Minus-Anpassung pro Kind.
-- Persönliche Punkte speichern.
-
-### Punkte: Dienstpunkte
-
-Dienstpunkte werden für Zusatzdienste oder besondere Dienstleistungen vergeben.
-
-Funktionen:
-
-- Dienstart auswählen.
-- Orden/Zelt oder beteiligte Personen bewerten.
-- Voreinstellung, zum Beispiel 3 Punkte.
-- Plus/Minus-Anpassungen erfassen.
-
-### Ränge, Lerneinheiten und Prüfungen
-
-Die App bereitet ein Rangsystem mit Punkteschwellen, Lerneinheiten und Prüfungsergebnissen vor.
-
-Ränge:
-
-- Knappe
-- Ritter
-- Freiherr
-- Graf
-- Markgraf
-- Landgraf
-- Fürst
-- Herzog
-- Großherzog
-
-Beispielhafte Rangwechsel-Logik:
-
-- Knappe zu Ritter ab 310 Punkten.
-- Ritter zu Freiherr ab 320 Punkten.
-- Freiherr zu Graf ab 330 Punkten.
-- Graf zu Markgraf ab 340 Punkten.
-- Markgraf zu Landgraf ab 345 Punkten.
-- Landgraf zu Fürst ab 350 Punkten.
-- Fürst zu Herzog ab 280 Punkten.
-- Großherzog ist eine Ernennung und keine normale Punkteschwelle.
-
-Wichtige Regel:
-
-Ein erreichter Rang soll im Folgejahr nicht verloren gehen oder zurückgestuft werden. Das gilt besonders für hohe Ränge wie Herzog und Großherzog.
-
-Lerneinheiten sind vorbereitet, zum Beispiel:
-
-- Knappe: Knoten, Natur, Waldläufer.
-- Ritter: Wappen, Waffen, Feuer.
-- Freiherr: Küche, Lageraufbau, Erste Hilfe.
-
-### Auswertungen
-
-Die Auswertungen dienen dazu, Punktestände, Personen, Orden/Zelte und Ränge zusammenzuführen.
-
-Funktionen:
-
-- Punkteübersichten vorbereiten.
-- Rangentwicklung sichtbar machen.
-- CSV-Export-Grundlage.
-- Personen- und Ordens-/Zeltwertungen auswerten.
-- Grundlage für spätere Lagerabschluss-Auswertungen.
-
-### Importe
-
-Die App enthält Importfunktionen, um bestehende Lagerdaten aus alten Dateien zu übernehmen.
-
-Unterstützte Importquellen aus dem Projektkontext:
-
-- Zeltlager Manager 2025 als Excel-Datei.
-- Speiseplan 2026 als ODS-Datei.
-- Ritterlagerprogramm 2026 als DOCX-Datei.
-- Aufgabenverteilung 2026 als DOCX-Datei.
-
-Funktionen:
-
-- Importlauf starten.
-- Importfehler protokollieren.
-- Quellzeilen und Fehler nachvollziehbar speichern.
-- Standardorden anlegen.
-- Dummy-Lagerjahr aus 2025 erzeugen.
-- Programm 2026 importieren.
-- Speiseplan 2026 importieren.
-- Dienste und Aufgabenverteilung vorbereiten.
-
-Besondere Importlogik:
-
-- Namen werden normalisiert, um Dubletten zu vermeiden.
-- Vertauschte Namensreihenfolgen können bei vorhandenem Geburtsdatum erkannt werden.
-- Geburtsdaten werden plausibilisiert.
-- Leere oder fehlerhafte Excel-Datumswerte werden nicht als echte Geburtstage übernommen.
-- Ranghistorien werden über mehrere Jahre gelesen.
-- Der letzte beziehungsweise höchste plausible bekannte Rang wird übernommen.
-- Niedrigere spätere Werte dürfen höhere erreichte Ränge nicht überschreiben.
-
-### Backup
-
-Das Backup-Modul ist für den Betrieb auf Shared Hosting/Plesk vorbereitet.
-
-Funktionen:
-
-- Backup-Läufe protokollieren.
-- Lokale Ablage unter `storage/backups`.
-- SQL-Dump und Dateisicherung vorbereiten.
-- Integration in geplante Aufgaben/Cron vorbereiten.
-- WebDAV-Sync nach Backup optional anstoßen.
-
-Wichtig: Backups gehören nicht ins Git-Repository.
-
-### WebDAV
-
-WebDAV dient zur externen Ablage beziehungsweise Synchronisation von Backups.
-
-Funktionen:
-
-- WebDAV aktivieren/deaktivieren.
-- URL, Benutzername, Passwort und Zielordner konfigurieren.
-- Verbindung testen.
-- Letztes Backup manuell senden.
-- Automatischen Sync nach Backup aktivieren.
-- Sync-Läufe protokollieren.
-
-WebDAV-Zugangsdaten gehören nicht in Git.
-
-### Geplante Aufgaben / Cron
-
-Die App bereitet geschützte geplante Aufgaben vor. Das ist wichtig für Shared Hosting, bei dem echte CLI-Crons nicht immer bequem nutzbar sind.
-
-Funktionen:
-
-- Aufgabenliste mit Status.
-- Empfohlenes Intervall.
-- Letzte Ausführung, Dauer, Rückgabecode, Ausgabe und Fehler.
-- Token-geschützte HTTP-Cron-URLs.
-- Locking gegen parallele Ausführung.
-- Manuelles Testen einzelner Aufgaben.
-
-### System / Einstellungen
-
-Der Systembereich bündelt administrative Funktionen.
-
-Funktionen:
-
-- Grundeinstellungen.
-- Lagerjahr-Konfiguration.
-- WebDAV-Konfiguration.
-- Backup-Verwaltung.
-- Importverwaltung.
-- Rollen- und Rechtebasis.
-- Audit-/Log-Grundlage.
-- Setup- und Migrationshilfen.
-
-### Setup und Migration
-
-Für einfache Erstinstallation auf Plesk/Shared Hosting gibt es temporäre öffentliche Helferdateien.
-
-Typische Dateien:
-
-- `public/setup.php`
-- `public/migration.php`
-
-Diese Dateien dürfen nur temporär auf dem Server liegen und müssen nach der Nutzung gelöscht werden. Sie sind deshalb in `.gitignore` ausgeschlossen.
-
-Migrationen liegen unter:
-
-```text
-database/migrations/
-```
-
-Nach einem Deploy müssen offene Migrationen ausgeführt werden.
-
-## Rollen und Rechte
-
-Die App verwendet Rollen und Rechte, damit nicht jeder Benutzer alle Bereiche sieht oder ändern kann.
-
-Typische Rollen:
-
-- Admin
-- Lagerleitung
-- Bereichsleitung
-- Mitarbeiter
-- Lesen
-
-Typische Rechte:
-
-- Dashboard ansehen.
-- Programm ansehen oder verwalten.
-- Essen ansehen oder verwalten.
-- Dienste ansehen oder verwalten.
-- Personen ansehen oder verwalten.
-- Sensible Personendaten ansehen.
-- Ordnungspunkte erfassen.
-- Punkte verwalten.
-- Prüfungen ansehen oder verwalten.
-- Importe verwalten.
-- Backups verwalten.
-- WebDAV verwalten.
-- Audit/Logs ansehen.
-- Einstellungen verwalten.
-
-Normale Mitarbeiter sollen zunächst vor allem schnelle operative Funktionen nutzen, zum Beispiel Ordnungspunkte oder Dienstbewertungen erfassen. Admin und Lagerleitung sehen die vollständige Verwaltung.
-
-## Technischer Aufbau
-
-Technologie:
+## Technik
 
 - PHP 8.3
-- MySQL/MariaDB
+- MySQL oder MariaDB
 - PDO
-- UTF-8
-- HTML/CSS/JavaScript ohne großes Framework
-- PWA-Grundlage mit Manifest und Service Worker
-- Mobile-first Design
+- UTF-8 durchgehend
+- eigener schlanker Router
+- mobile-first PWA-Grundlage mit Manifest und Service Worker
+- geschützter Storage außerhalb von `public/`
 
-Projektstruktur:
+## Grundentscheidungen
+
+- Keine Mandantenfähigkeit.
+- Stattdessen gibt es Lagerjahre mit aktivem Lagerjahr.
+- Orden und Zelt sind fachlich dasselbe Objekt.
+- Eine Person kann Teilnehmer, Mitarbeiter oder beides sein.
+- Alle Nutzer melden sich über Dropdown und 4 bis 6 stellige PIN an.
+- Adminrechte sind Rollenrechte, kein separater Login.
+- PWA mit Online-Pflicht. Es wird keine vollständige Offline-Synchronisation gebaut.
+
+## Ordnerstruktur
 
 ```text
-app/          PHP-Anwendungscode, Controller, Services, Views, Support
-config/       Konfiguration, ohne produktive database.php im Repository
-database/     Migrationen und Datenbankgrundlagen
-docs/         Projektdokumentation und Release-Notizen
-public/       Einziger öffentlicher Webroot
-routes/       Webrouten
-scripts/      Wartungs- und CLI-Skripte
-storage/      Laufzeitdaten, Backups, Logs, Uploads, Imports
+app/        Anwendungscode
+config/     Konfiguration außerhalb des Webroots
+database/   Migrationen und Seeds
+docs/       Dokumentation
+public/     einziger Webroot
+routes/     Web- und Cron-Routen
+scripts/    CLI- und Wartungsskripte
+storage/    Uploads, Backups, Logs, Imports und Temp-Dateien
+tests/      manuelle Testlisten und spätere Smoke-Tests
 ```
 
-Der Ordner `public/` ist der einzige Webroot. Alle anderen Ordner dürfen nicht direkt öffentlich erreichbar sein.
+## Installation
 
-## Sicherheit und Betriebsregeln
+1. Dateien auf den Server hochladen.
+2. Webroot in Plesk oder Hosting auf `public/` setzen.
+3. Datenbank anlegen.
+4. `config/database.php` aus `config/example.database.php` erstellen oder Umgebungsvariablen setzen.
+5. Schreibrechte für `storage/` und Unterordner prüfen.
+6. Migrationen ausführen:
 
-Wichtige Regeln:
+```bash
+php scripts/maintenance/migrate.php
+```
 
-- `public/` ist der einzige Document Root.
-- `config/database.php` wird nicht in Git gespeichert.
-- `storage/` enthält produktive Daten und bleibt außerhalb von Git.
-- `setup.php` und `migration.php` werden nach Nutzung gelöscht.
-- Uploads, Logs, Backups und Importquellen werden nicht veröffentlicht.
-- CSRF-Schutz ist zentral vorgesehen.
-- Sessions werden beim Login rotiert.
-- PINs werden gehasht gespeichert.
-- Fehler werden geloggt, aber nicht unnötig öffentlich ausgegeben.
+7. Ersten Adminbenutzer anlegen, falls noch kein Benutzer existiert:
 
-## Repository-Regeln
+```bash
+php scripts/maintenance/create_user.php --first=Max --last=Mustermann --pin=123456 --role=admin
+```
 
-Dieses Repository soll nur Quellcode und technische Dokumentation enthalten. Produktive Daten und Secrets bleiben außerhalb von Git:
+8. Im Browser `/login` öffnen und anmelden.
+9. Die initiale PIN direkt ändern.
 
-- `config/database.php`
-- `storage/logs/`
-- `storage/backups/`
-- `storage/uploads/`
-- `storage/imports/`
-- `storage/documents/`
-- `storage/import_sources/`
-- `storage/setup.lock`
-- `public/setup.php`
-- `public/migration.php`
 
-## Serverstruktur
+### Optionales Web-Setup
 
-Der Projektordner liegt vollständig im Hosting-Verzeichnis. Der öffentliche Document Root muss auf `public/` zeigen.
+Ab v0.12.1 kann die Erstinstallation alternativ einmalig über den Browser erfolgen:
+
+```text
+/setup.php
+```
+
+Das Setup schreibt `config/database.php`, führt alle Migrationen aus und kann den ersten Admin anlegen. Danach muss `public/setup.php` sofort vom Server gelöscht werden. Details stehen in `docs/deployment/SETUP.md`.
+
+## Konfiguration
+
+Beispielkonfigurationen liegen in:
+
+```text
+config/example.app.php
+config/example.database.php
+```
+
+Für lokale Tests kann `config/app.php` und `config/database.php` angepasst werden. Produktive Secrets dürfen nicht in öffentliche Repositories.
+
+## Login und Rollen
+
+Alle Nutzer verwenden denselben Loginweg. Eine Person wird im Dropdown ausgewählt und meldet sich mit einer 4 bis 6 stelligen PIN an. Adminrechte entstehen ausschließlich durch Rollen und Berechtigungen. Es gibt keinen separaten Adminlogin.
+
+Startrollen:
+
+- `admin`
+- `lagerleitung`
+- `bereichsleitung`
+- `mitarbeiter`
+- `lesen`
+
+Ersten Benutzer per CLI anlegen:
+
+```bash
+php scripts/maintenance/create_user.php --first=Max --last=Mustermann --pin=123456 --role=admin
+```
+
+## PWA und Design
+
+Ab v0.3.0 enthält die App das Ritterlager-Designsystem mit Royalblau, Mint-Aktionen, Montserrat-Überschriften, Inter-UI-Text, Kartenlayout, Desktop-Sidebar, mobiler Bottom-Navigation, Day-Tabs, Status-Chips und PWA-Manifest.
+
+Die PWA ist onlinepflichtig. Der Service Worker speichert nur Shell-Assets und zeigt bei fehlender Verbindung eine Offline-Hinweisseite. Es werden keine Fachseiten und keine personenbezogenen Daten offline gespeichert.
+
+## Lagerjahre und Orden/Zelte
+
+Ab v0.4.0 gibt es Lagerjahre mit Startdatum, Enddatum, Ort und aktivem Status. Alle Tagesansichten beziehen sich später auf das aktive Lagerjahr.
+
+Orden und Zelt sind im Datenmodell dasselbe Objekt. Beispiele sind Johanniter, Falkner, Samariter, Petrusker, Morgensternritter und Malteser. Ein Orden/Zelt kann Leiter, Helfer, Kürzel, Farbmarke und Sortierung haben.
+
+Neue Verwaltungsbereiche:
+
+```text
+/admin/lagerjahre
+/admin/orden
+```
+
+Neue Rechte:
+
+```text
+camp_years.view
+camp_years.manage
+orders.view
+orders.manage
+```
+
+Die Übersicht zeigt ab v0.4.0 echte Grunddaten aus aktivem Lagerjahr, Personen und Orden/Zelten. Programm, Essen und Dienste bleiben bis zu den nächsten Fachphasen bewusst als Empty-State sichtbar.
+
+## Programm
+
+Ab v0.5.0 gibt es das Programmmodul unter:
+
+```text
+/programm
+```
+
+Programmpunkte werden je Lagertag als Timeline angezeigt. Bearbeitung ist nur mit `program.manage` möglich. Normale eingeloggte Nutzer mit `program.view` können das Programm lesen.
+
+Gespeichert werden Datum, Startzeit, Endzeit, Titel, Kategorie, Ort, Verantwortliche, Beschreibung und betroffene Orden/Zelte.
+
+
+## Essen und Speiseplan
+
+Ab v0.6.0 gibt es das Essen-Modul unter:
+
+```text
+/essen
+```
+
+Der Speiseplan wird je Lagertag in Karten für Frühstück, Mittagessen und Abendessen angezeigt. Bearbeitung ist nur mit `meals.manage` möglich. Nutzer mit `meals.view` können den Speiseplan lesen.
+
+Gespeichert werden Datum, Mahlzeit-Typ, Uhrzeit, Gericht oder Beschreibung, Portionen gesamt, vegetarische Portionen, Allergiehinweise, Küchenteam, Notizen und optional erste Zutaten als Vorbereitung für eine spätere Einkaufsliste.
+
+Der ODS-Import und die automatische Einkaufsliste sind noch nicht umgesetzt.
+
+## Cronjobs und geplante Aufgaben
+
+Seit v0.12.0 gibt es geplante Aufgaben unter:
+
+```text
+/system/tasks
+```
+
+Startaufgaben:
+
+- `backup_daily`
+- `backup_weekly`
+- `cleanup_logs`
+
+Jede Aufgabe hat Aktivstatus, empfohlenes Intervall, Lock gegen parallele Läufe, Laufprotokoll und optionalen HTTP-Cron-Token. HTTP-Cron führt nur feste Task-Keys aus. Tokens werden nur gehasht gespeichert und nach Regeneration einmalig als vollständige URL angezeigt.
+
+CLI-Beispiel:
+
+```bash
+php scripts/cron/run_task.php backup_daily
+```
+
+HTTP-Beispiel nach Token-Regeneration:
+
+```text
+/cron/run?task=backup_daily&token=EINMALIG_ANGEZEIGTER_TOKEN
+```
+
+## Backups
+
+Seit v0.12.0 gibt es eine Backupfunktion unter:
+
+```text
+/system/backups
+```
+
+Backups enthalten Datenbank-Dump, Projektdateien und ausgewählte Storage-Bereiche wie Uploads, Importe und Dokumente. Backup-Dateien liegen in `storage/backups` und werden nicht direkt öffentlich ausgeliefert. Download läuft ausschließlich über den Controller mit `backups.download`.
+
+`mysqldump` wird bevorzugt. Wenn `mysqldump` fehlt, nutzt die App einen PHP-Fallback. Falls `ZipArchive` fehlt, versucht die App einen `PharData`-Archiv-Fallback.
+
+Nach dem Update auf v0.12.0 ausführen:
+
+```bash
+php scripts/maintenance/migrate.php
+```
+
+Danach neu anmelden, damit Rechte wie `backups.manage`, `backups.download`, `cron.manage` und `logs.view` in der Session vorhanden sind.
+
+## Security
+
+- `public/` ist der einzige Webroot.
+- Geschützte Ordner enthalten `.htaccess`-Sperren.
+- Fehler werden geloggt.
+- CSRF-Helper ist vorbereitet.
+- Login per Dropdown und PIN ist ab v0.2 vorhanden.
+- Rollenrechte werden serverseitig geprüft.
+- Content-Security-Policy ist ab v0.3.0 aktiv.
+- Inline-JavaScript wurde in eigene Asset-Dateien ausgelagert.
+- PINs werden ausschließlich als Hash gespeichert.
+- Loginereignisse und Rollenänderungen werden im Audit-Log protokolliert.
+
+## Updates
+
+Jede Version aktualisiert:
+
+- `VERSION`
+- `CHANGELOG.md`
+- passende Datei in `docs/releases/`
+- Migrationen, wenn Datenbankänderungen nötig sind
+
+## Troubleshooting
+
+Zentrales App-Log:
+
+```text
+storage/logs/app-YYYY-MM-DD.log
+```
+
+Wenn eine weiße Seite erscheint, zuerst dieses Log prüfen.
+
+
+
+## Personen, Teilnehmerstatus und Geburtstage
+
+Seit v0.8.0 speichert die Personenverwaltung vollständige Teilnehmerdaten mit Geburtsdatum, Adresse, Kontakt, Essenshinweisen, Allergien, medizinischen Hinweisen, Notfallkontakt und internen Bemerkungen.
+
+Personen können je Lagerjahr Teilnehmer, Mitarbeiter oder beides sein. Die Zuordnung zu einem Orden/Zelt erfolgt ebenfalls lagerjahrbezogen. Geburtstage während des aktiven Lagerzeitraums werden automatisch markiert.
+
+Sensible Angaben wie Notfallkontakte, Allergien, medizinische Hinweise und interne Bemerkungen sind in der Detailansicht nur für Rollen mit `persons.sensitive.view` oder `persons.manage` sichtbar. Änderungen an diesen Feldern werden im Audit-Log protokolliert, aber ohne Klartextinhalte.
+
+Nach dem Update auf v0.8 ausführen:
+
+```bash
+php scripts/maintenance/migrate.php
+```
+
+Danach einmal neu anmelden, damit das neue Recht `persons.sensitive.view` in der Session geladen wird.
+
+## Dienste
+
+Seit v0.7 gibt es eine tägliche Dienstliste für Küchendienst, Spüldienst, Platzdienst, Nachtwache und weitere Lageraufgaben. Dienste können Personen, Orden/Zelten oder Freitext-Teams zugewiesen werden. Der Platzdienst nutzt einen Vorschlag anhand der zuletzt gespeicherten Zuweisung und der Sortierung der Orden/Zelte. Bestehende manuelle Zuweisungen werden nicht überschrieben.
+
+Nach dem Update auf v0.7 ausführen:
+
+```bash
+php scripts/maintenance/migrate.php
+```
+
+Danach einmal neu anmelden, damit Rollenrechte neu in die Session geladen werden.
+
+## Ordnungspunkte ab v0.9.0
+
+Normale Mitarbeiter können über `/ordnung` einem Kind Punkte abziehen. Dieser Flow ist fest auf die Kategorie Ordnung begrenzt. Serverseitig wird keine andere Kategorie akzeptiert.
+
+Erlaubte Standardwerte für Mitarbeiter:
+
+- -1
+- -2
+- -3
+
+Admins und Lagerleitung können über `/admin/ordnungspunkte` Einträge prüfen, stornieren und Korrekturen buchen. Einträge werden nicht hart gelöscht.
+
+Nach dem Update auf v0.9.0 ausführen:
+
+```bash
+php scripts/maintenance/migrate.php
+```
+
+Danach neu anmelden, damit Rechte wie `points.order.create` und `points.manage` in der Session vorhanden sind.
+
+## Auswertung, Rangordnung und Prüfungen ab v0.10.0
+
+Seit v0.10.0 gibt es einen Adminbereich für Auswertungen, Rangstufen, Lerneinheiten und Prüfungsergebnisse.
+
+Bereiche:
+
+- `/admin/auswertung` für den Zwischenstand je Orden/Zelt und Teilnehmer
+- `/admin/rangstufen` für Rangstufen
+- `/admin/lerneinheiten` für Lerneinheiten
+- `/admin/pruefungen` für Prüfungsergebnisse und Rangzuordnung
+
+Die Auswertung ist ein Zwischenstand. Sie ersetzt noch keine fachlich geprüfte Endwertung und übernimmt keine Excel-Formeln unkontrolliert.
+
+Nach dem Update auf v0.10.0 ausführen:
+
+```bash
+php scripts/maintenance/migrate.php
+```
+
+Danach neu anmelden, damit Rechte wie `exams.view` und `exams.manage` in der Session vorhanden sind.
+
+
+
+## Importe
+
+Der Adminbereich `Importe` verarbeitet XLSX, ODS und DOCX kontrolliert. Dateien werden in `storage/imports` gespeichert und nicht direkt öffentlich ausgeliefert. Jeder Import erzeugt eine Vorschau, einen Importlauf und ein Fehlerprotokoll. Bestehende Daten werden nicht still überschrieben.
+
+Für die inhaltliche Vorschau von XLSX, ODS und DOCX braucht PHP die Erweiterung `ZipArchive`. Ohne diese Erweiterung wird der Upload sicher gespeichert, aber die Datei kann nicht automatisch gelesen werden.
+
+## Logs und Betrieb
+
+Seit v0.12.0 gibt es eine Logansicht unter:
+
+```text
+/system/logs
+```
+
+Sie zeigt die letzten Einträge aus `storage/logs`. Die Logdateien bleiben im geschützten Storage. Der Logger filtert Tokens, PINs, Passwörter und Secrets aus dem Kontext.
+
+Restore-Hinweise stehen in:
+
+```text
+docs/deployment/RESTORE.md
+```
+
+
+## Plesk / open_basedir
+
+Wenn die Anwendung mit `open_basedir restriction in effect` startet, ist der Webroot zwar korrekt auf `public/` gesetzt, PHP darf aber nicht auf das Projektverzeichnis oberhalb von `public/` zugreifen. In Plesk muss `open_basedir` das Projektverzeichnis enthalten, nicht nur den Document Root. Details stehen in `docs/deployment/PLESK_OPEN_BASEDIR.md`.
+
+## Hinweis zu v0.12.4 Setup-Hotfix
+
+Falls beim Web-Setup die Meldung `There is no active transaction` erscheint, liegt dies an MySQL/MariaDB-DDL mit implizitem Commit. Ab v0.12.4 führt der MigrationRunner MySQL-Migrationen ohne äußere PDO-Transaktion aus. Danach `public/setup.php` erneut aufrufen. Bereits angelegte Tabellen müssen nicht gelöscht werden.
+
+
+## Hinweis v0.12.4
+
+Hotfix für die Setup-Migration der Importtabellen: `row_number` wurde in `source_row_number` geändert, damit MySQL/MariaDB die Migration ohne Syntaxfehler ausführt.
+
+
+## v0.13.0 Importvorlagen
+
+Unter `Admin → Importe` stehen zusätzlich mitgelieferte Importvorlagen bereit. Sie nutzen Dateien aus `storage/import_sources/` und schreiben Daten kontrolliert in die bestehenden Module. Vorhandene Datensätze werden nicht blind überschrieben.
+
+Enthalten sind Importvorlagen für Zeltlager Manager 2025, ein Dummy-Lagerjahr 2000, Programm 2026, Speiseplan 2026 sowie Dienste und Aufgabenverteilung 2026.
+
+Neue Lagerjahre bekommen automatisch die sechs festen Orden/Zelte: Johanniter, Falkner, Samariter, Petrusker, Morgensternritter und Malteser.
+
+
+## Migration per Browser
+
+Für einfache Hosting-Umgebungen gibt es ab v0.13.1 die Datei `public/migration.php`.
+
+Aufruf bei korrekt gesetztem Webroot:
+
+```text
+https://deine-domain.de/migration.php
+```
+
+Die Datei führt alle noch offenen Migrationen aus. Sie hat bewusst keinen Login und keinen Token. Deshalb nach erfolgreicher Ausführung sofort vom Server löschen.
+
+## WebDAV für Backups
+
+Ab v0.13.2 kann WebDAV unter `System → WebDAV` eingerichtet werden.
+
+WebDAV ist nur eine zusätzliche Ablage. Die lokal erzeugte Backupdatei unter `storage/backups` bleibt die technische Wahrheit. Nach einem erfolgreichen Backup versucht die App, die Datei per WebDAV zu übertragen, wenn WebDAV aktiv und vollständig konfiguriert ist.
+
+Wichtige Felder:
+
+- WebDAV-URL, zum Beispiel `https://cloud.example.de/remote.php/dav/files/benutzer`
+- Benutzername
+- Passwort oder App-Passwort
+- Zielordner, zum Beispiel `ritterlager/backups`
+- Timeout
+
+Für Nextcloud sollte ein App-Passwort genutzt werden.
+
+## Browser-Migration und Datenbankzugang
+
+`public/migration.php` zeigt ab v0.13.2 bei Fehlern wie `SQLSTATE[HY000] [1698] Access denied for user 'root'@'localhost'` ein Formular für die echten Datenbankdaten an. Nach erfolgreichem Verbindungstest wird `config/database.php` geschrieben und die Migration kann erneut laufen.
+
+Nach erfolgreicher Nutzung muss `public/migration.php` vom Server gelöscht werden.
+
+
+## Version 0.13.4
+
+Die Ordnungspunkte wurden auf ein positives Bewertungsmodell umgestellt. Tägliche Bewertungen erfassen Ordnung persönlich, Sauberkeit Geschirr, Zelt, Disziplin/Pünktlichkeit und Ordnung Prüfung. Zusätzlich gibt es einmalige Lagerwertungen für Platzdienst, drei Prüfungsfächer und Zusatz Küchendienst.
+
+Nach dem Update `public/migration.php` aufrufen oder `php scripts/maintenance/migrate.php` ausführen. Danach einmal neu anmelden.
+
+
+## Hinweis v0.13.4
+
+`public/migration.php` wurde an `setup.php` angeglichen und lädt den Bootstrap direkt. Dadurch entsteht kein falscher open_basedir-Hinweis mehr, wenn das Setup auf demselben Hosting funktioniert. Nach der Nutzung muss die Datei wieder gelöscht werden.
+
+
+## Hinweis v0.13.5: migration.php und Projektpfad
+
+`public/migration.php` sucht das Projektverzeichnis jetzt robuster. Wenn `app/Support/bootstrap.php` nicht gefunden wird, zeigt die Datei eine Diagnose mit den geprüften Pfaden.
+
+Die korrekte Serverstruktur ist weiterhin:
 
 ```text
 httpdocs/
   app/
   config/
   database/
-  docs/
-  public/
   routes/
-  scripts/
   storage/
+  public/
+    index.php
+    migration.php
 ```
 
-Der Domain-Document-Root muss sein:
+Wenn nach dem Entpacken ein zusätzlicher Ordner wie `httpdocs/ritterlager-manager-v0.13.x/app/` existiert, muss der Inhalt dieses Ordners nach `httpdocs/` verschoben werden.
+
+
+## Hinweis v0.13.6
+
+Behebt den HY093-Fehler beim Import durch eindeutige PDO-Platzhalter in der Orden/Zelt-Suche.
+
+
+## Update v0.13.7
+
+Dieses Update behebt die Suche nach gebündelten Import-Quelldateien. Die bevorzugte Ablage bleibt:
 
 ```text
-httpdocs/public
+storage/import_sources/
+  Zeltlager 2025 Manager.xlsx
+  Speiseplan_2026.ods
+  Ritterlagerprogramm 2026.docx
+  Aufgabenverteilung 2026.docx
 ```
 
-Nicht korrekt wäre:
+Falls die Dateien versehentlich unter `storage/imports`, im Projektroot oder in `public` liegen, versucht der Import sie jetzt ebenfalls zu finden. Dauerhaft sollten die Dateien aber nicht in `public` liegen.
 
-```text
-httpdocs
-```
 
-und ebenfalls nicht korrekt wäre ein Upload nur in:
+## Update v0.13.8
 
-```text
-httpdocs/public
-```
+Dieses Update korrigiert die gebündelten Importe für Programm, Essen und Dienste. Nach dem Hochladen muss `https://app.ritterlager.com/migration.php` ausgeführt werden. Danach sollten die Importvorlagen für Programm 2026, Speiseplan 2026 und Dienste/Aufgabenverteilung 2026 erneut gestartet werden.
 
-## Deployment
+Wichtig: Die Aufgabenverteilung wird jetzt nur noch als Dienstarten-Grundlage importiert. Tagesdienste entstehen aus Platzdienst und Nachtwache im Programm.
 
-Nach Code-Updates müssen offene Migrationen ausgeführt werden:
+## Update v0.13.9
 
-```bash
-php scripts/maintenance/migrate.php
-```
+Der Speiseplan ist jetzt strikt auf die Lagertage des jeweiligen Lagerjahres begrenzt.
 
-Alternativ temporär per Browser:
+Nach dem Hochladen bitte ausführen:
 
 ```text
 https://app.ritterlager.com/migration.php
 ```
 
-Danach `public/migration.php` wieder löschen.
+Die Migration deaktiviert vorhandene Mahlzeiten außerhalb des Lagerzeitraums. Neue manuelle Speiseplan-Einträge außerhalb des Start- und Enddatums werden blockiert. Dateiimporte für Speiseplan überspringen Mahlzeiten außerhalb des Lagerzeitraums.
 
-## Git-Deployment auf Plesk
-
-Empfohlen ist ein Deployment in den kompletten Projektordner, nicht direkt in `public/`.
-
-Deployment-Ziel:
-
-```text
-/var/www/vhosts/.../app.ritterlager.com/httpdocs
-```
-
-Document Root:
-
-```text
-/var/www/vhosts/.../app.ritterlager.com/httpdocs/public
-```
-
-Nach dem Git-Deploy müssen produktive Dateien auf dem Server bestehen bleiben, insbesondere:
+Bei Full-ZIPs weiterhin nicht überschreiben:
 
 ```text
 config/database.php
-storage/
+storage/uploads/
+storage/imports/
+storage/documents/
+storage/backups/
+storage/logs/
 ```
 
-Diese dürfen nicht durch Git überschrieben oder gelöscht werden.
 
-## Lokale Entwicklung
 
-Für lokale Entwicklung wird eine lokale Datenbankkonfiguration benötigt. Da `config/database.php` nicht im Repository liegt, muss diese Datei lokal selbst angelegt werden.
+## Hinweis v0.13.10
 
-Empfohlen:
+Tagesgebundene Module sind auf die Lagertage des aktiven Lagerjahres begrenzt. Betroffen sind Programm, Essen, Dienste und Ordnung. Nach dem Update `public/migration.php` ausführen und danach wieder löschen.
+## Hinweis v0.13.11
 
-```text
-config/database.php
-```
+Diese Version korrigiert die Migration `2026_06_25_000019_limit_all_day_modules_to_camp_days.php`. Wenn zuvor `Invalid migration file` angezeigt wurde, bitte die Datei ersetzen und `public/migration.php` erneut aufrufen.
 
-mit lokalen Zugangsdaten. Diese Datei bleibt durch `.gitignore` privat.
 
-## Aktueller Stand und bekannte Grenzen
+## v0.14.0 Hinweise
 
-Der Stand v0.14.11 enthält viele operative Grundfunktionen und mehrere Korrekturen rund um Import, Ränge, Dubletten, Geburtstage und Personensuche.
+Nach dem Update auf v0.14.0 bitte `public/migration.php` einmal ausführen und danach löschen.
 
-Bekannte fachliche Grenze:
+Neue Funktionen:
 
-Wenn eine Person in keiner importierten Datei einen korrekten Rang, Geburtstag oder Lagerstatus hat, kann die App diese Information nicht erraten. Solche Fälle müssen manuell gepflegt werden.
+- Wiederkehrende Programmpunkte markieren.
+- Ordensfarben per Colorpicker setzen.
+- Punkte erfassen über Spielwertung, Zeltbewertung, Geschirrbewertung und Dienstpunkte.
 
-Bekannte technische Grenze:
+## v0.14.1: Ränge und Beinamen
 
-Die App ist auf den beschriebenen Projektkontext zugeschnitten. Sie ist keine generische Vereins-, Schul- oder Eventverwaltungssoftware. Erweiterungen sollten immer anhand der bestehenden Fachlogik für Lagerjahre, Orden/Zelte, Personen, Dienste und Punkte erfolgen.
+Die App führt jetzt die feste Ritterlager-Rangfolge: Knappe, Ritter, Freiherr, Graf, Markgraf, Landgraf, Fürst, Herzog und Großherzog.
+
+Beinamen werden in `persons.nickname` gespeichert und im Personenbereich, in Prüfungsergebnissen, in Auswertungen und im CSV-Export angezeigt.
+
+Der Import `Zeltlager Manager 2025 importieren` übernimmt Beinamen aus der Excel-Datei und normalisiert Rangangaben wie `1 Knappe` auf die festen Rangstufen.
+
+Nach dem Update ist `public/migration.php` auszuführen und anschließend wieder zu löschen.
+
+
+
+## v0.14.3
+
+Freie Ordensfarben aus dem Colorpicker werden jetzt konsequent in Karten, Badges, Teilnehmerlisten, Punkteansicht und Auswertung angezeigt.
+
+## Update v0.14.6
+
+Dieses Update korrigiert die fehlgeschlagene Migration `2026_06_25_000023_person_search_and_rank_backfill.php`. Die Tabelle `app_versions` besitzt die Spalte `notes`, nicht `description`. Nach dem Hochladen erneut `public/migration.php` ausführen.
+
+## Update v0.14.7
+
+Die Ranghistorie wurde korrigiert. Beim Import aus dem Zeltlager Manager wird pro Person der letzte bekannte Rang bis zum Quelljahr genutzt. Ein bereits erreichter Rang kann nicht durch spätere leere oder niedrigere Einträge verloren gehen.
+
+Nach dem Update: Migration ausführen und den Import „Zeltlager Manager 2025 importieren“ erneut starten.
+
+### Update v0.14.8
+
+Behebt doppelte Personen nach wiederholtem Import. Nach dem Hochladen `public/migration.php` ausführen. Danach den Zeltlager-Manager-Import erneut starten.
+
+
+## v0.14.11
+
+Behebt falsche Geburtstage aus dem Import und schützt erreichte Ränge gegen Rückstufung. Nach dem Update Migration ausführen und den Zeltlager-Manager-Import erneut starten.
+
+
+## Hinweis v0.14.11
+
+Der Import vermeidet DATE-Vergleiche mit leeren Strings. Dadurch wird der Fehler `SQLSTATE[HY000]: General error: 1525 Incorrect DATE value: ''` beim erneuten Import behoben.
