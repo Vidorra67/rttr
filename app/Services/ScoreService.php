@@ -373,6 +373,8 @@ final class ScoreService
             $byPersonUnit[(int) $result['person_id']][(int) $result['learning_unit_id']] = $result;
         }
 
+        $orderPointSums = $this->orderPointSumsByOrder($campYearId);
+
         foreach ($participants as &$participant) {
             $participant['results'] = [];
             $participant['points_sum'] = (float) ($pointSums[(int) $participant['id']] ?? 0.0);
@@ -397,6 +399,8 @@ final class ScoreService
                 }
             }
             $participant['exam_points_sum'] = (float) ($participant['exam_points_sum'] ?? 0.0);
+            $participant['order_points_sum'] = (float) ($orderPointSums[(int) ($participant['order_id'] ?? 0)] ?? 0.0);
+            $participant['total_points_sum'] = $participant['points_sum'] + $participant['exam_points_sum'] + $participant['order_points_sum'];
             $participant['suggested_next_rank'] = $this->suggestedNextRank($campYearId, $participant, count($units));
         }
         unset($participant);
@@ -495,6 +499,7 @@ final class ScoreService
     public function orderSummary(int $campYearId): array
     {
         $orders = $this->orders($campYearId);
+        $orderPointSums = $this->orderPointSumsByOrder($campYearId);
         $summary = [];
         foreach ($orders as $order) {
             if ((int) ($order['is_active'] ?? 0) !== 1) {
@@ -508,14 +513,15 @@ final class ScoreService
             foreach ($matrix['participants'] as $participant) {
                 $passedCount += (int) $participant['passed_count'];
                 $openCount += (int) $participant['open_count'];
-                $pointsSum += (float) $participant['points_sum'];
+                $pointsSum += (float) $participant['points_sum'] + (float) $participant['exam_points_sum'];
             }
+            $orderPointsSum = (float) ($orderPointSums[(int) $order['id']] ?? 0.0);
             $summary[] = [
                 'order' => $order,
                 'participant_count' => $participantCount,
                 'passed_count' => $passedCount,
                 'open_count' => $openCount,
-                'points_sum' => $pointsSum,
+                'points_sum' => $pointsSum + $orderPointsSum,
             ];
         }
         return $summary;
@@ -529,7 +535,7 @@ final class ScoreService
             throw new RuntimeException('CSV konnte nicht erstellt werden.');
         }
 
-        $header = ['Teilnehmer', 'Beiname', 'Orden/Zelt', 'Rang', 'Nächstes Jahr', 'Punkte gesamt', 'Bestanden', 'Offen'];
+        $header = ['Teilnehmer', 'Beiname', 'Orden/Zelt', 'Rang', 'Nächstes Jahr', 'Punkte persönlich', 'Punkte Orden', 'Punkte Prüfung', 'Punkte gesamt', 'Bestanden', 'Offen'];
         foreach ($matrix['units'] as $unit) {
             $header[] = (string) $unit['title'];
         }
@@ -543,6 +549,9 @@ final class ScoreService
                 (string) ($participant['rank_level_label'] ?? $participant['rank_label'] ?? ''),
                 (string) ($participant['next_rank_level_label'] ?? $participant['next_rank_label'] ?? ''),
                 number_format((float) $participant['points_sum'], 2, ',', ''),
+                number_format((float) $participant['order_points_sum'], 2, ',', ''),
+                number_format((float) $participant['exam_points_sum'], 2, ',', ''),
+                number_format((float) $participant['total_points_sum'], 2, ',', ''),
                 (string) $participant['passed_count'],
                 (string) $participant['open_count'],
             ];
@@ -689,7 +698,7 @@ final class ScoreService
         }
 
         $pointsRequired = $participant['promotion_points_required'] ?? null;
-        $hasEnoughPoints = $pointsRequired === null || (float) ($participant['points_sum'] ?? 0) >= (float) $pointsRequired;
+        $hasEnoughPoints = $pointsRequired === null || (float) ($participant['total_points_sum'] ?? 0) >= (float) $pointsRequired;
         $hasPassedExam = $unitCount > 0 && (int) ($participant['passed_count'] ?? 0) >= $unitCount;
 
         return [
@@ -707,6 +716,17 @@ final class ScoreService
         $out = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $out[(int) $row['person_id']] = (float) $row['points_sum'];
+        }
+        return $out;
+    }
+
+    private function orderPointSumsByOrder(int $campYearId): array
+    {
+        $stmt = Database::connection()->prepare('SELECT order_id, SUM(points) AS points_sum FROM point_entries WHERE camp_year_id = :camp_year_id AND person_id IS NULL AND order_id IS NOT NULL AND voided_at IS NULL GROUP BY order_id');
+        $stmt->execute(['camp_year_id' => $campYearId]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[(int) $row['order_id']] = (float) $row['points_sum'];
         }
         return $out;
     }

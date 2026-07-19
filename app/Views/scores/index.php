@@ -126,7 +126,7 @@ $canManage = $canManage ?? false;
                             <th>Orden/Zelt</th>
                             <th>Rang</th>
                             <th>Nächstes Jahr</th>
-                            <th>Punkte</th>
+                            <th>Gesamtpunkte</th>
                             <th>Bestanden</th>
                             <th>Offen</th>
                         </tr>
@@ -139,7 +139,10 @@ $canManage = $canManage ?? false;
                                 <td><?= e($participant['order_short_name'] ?? $participant['order_name'] ?? 'offen') ?></td>
                                 <td><?= e($participant['rank_level_label'] ?? $participant['rank_label'] ?? 'offen') ?></td>
                                 <td><?php $suggestion = $participant['suggested_next_rank'] ?? null; ?><?= is_array($suggestion) ? e($suggestion['label']) . ($suggestion['eligible'] ? ' · möglich' : ' · offen') : e($participant['next_rank_level_label'] ?? $participant['next_rank_label'] ?? 'offen') ?></td>
-                                <td><?= e(number_format((float) $participant['points_sum'], 1, ',', '.')) ?></td>
+                                <td>
+                                    <?= e(number_format((float) $participant['total_points_sum'], 1, ',', '.')) ?>
+                                    <br><small class="muted">persönlich <?= e(number_format((float) $participant['points_sum'], 1, ',', '.')) ?> · Orden <?= e(number_format((float) $participant['order_points_sum'], 1, ',', '.')) ?> · Prüfung <?= e(number_format((float) $participant['exam_points_sum'], 1, ',', '.')) ?></small>
+                                </td>
                                 <td><?= e($participant['passed_count']) ?></td>
                                 <td><?= e($participant['open_count']) ?></td>
                             </tr>

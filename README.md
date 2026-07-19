@@ -554,3 +554,9 @@ Küchendienst (3x täglich, an Frühstück/Mittagessen/Abendessen orientiert) un
 Außerdem behoben: Tages-Reiter auf der Übersicht und auf allen Ordnungspunkte-Seiten wechselten das Datum nicht zuverlässig; automatisch abschickende Auswahlfelder (Orden/Zelt-Filter) reagierten wegen der aktiven Content-Security-Policy nicht; Kartenreihen in mehrspaltigen Grids waren uneinheitlich ausgerichtet.
 
 Nach dem Update Migration ausführen (`public/migration.php` oder `php scripts/maintenance/migrate.php`), damit Küchendienst/Platzdienst auch für bereits bestehende Lagerjahre rückwirkend angelegt werden.
+
+## v0.14.13
+
+Die Auswertung zeigt jetzt eine echte Gesamtpunktzahl je Teilnehmer: persönliche Punkte, die vollen Orden/Zelt-Punkte des zugeordneten Ordens und Prüfungspunkte aus den Lerneinheiten-Ergebnissen wurden bislang getrennt geführt und teils gar nicht angezeigt. Rangaufstiegs-Schwellen prüfen jetzt gegen diese Gesamtsumme. Die Zwischenstand-Tabelle zeigt eine Aufschlüsselung, der CSV-Export eigene Spalten je Anteil.
+
+Keine Migration nötig.

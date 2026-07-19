@@ -1,3 +1,21 @@
+## v0.14.13 - Gesamtpunkte in der Auswertung
+
+### Neu
+
+- Die Auswertung zeigt jetzt eine echte Gesamtpunktzahl je Teilnehmer: persönliche Punkte + volle Orden/Zelt-Punkte des zugeordneten Ordens + Prüfungspunkte aus den Lerneinheiten-Ergebnissen. Die Orden/Zelt-Punkte werden jedem Mitglied vollständig angerechnet, nicht anteilig aufgeteilt.
+- Die Rangaufstiegs-Schwellen (z. B. 310 Punkte für Ritter) prüfen jetzt gegen diese Gesamtpunktzahl statt nur gegen persönliche Punkte.
+- Die Zwischenstand-Tabelle zeigt unter der Gesamtsumme eine Aufschlüsselung (persönlich/Orden/Prüfung). Der CSV-Export enthält die drei Anteile als eigene Spalten zusätzlich zur Gesamtsumme.
+- Die Orden/Zelt-Übersichtskarten summieren jetzt ebenfalls korrekt persönliche Punkte, Prüfungspunkte und die eigenen Orden/Zelt-Punkte des Ordens (statt wie zuvor nur die persönlichen Punkte der Mitglieder).
+
+### Behoben
+
+- Prüfungsergebnisse mit Punkten (Lerneinheiten-Ergebnisse, `/admin/pruefungen`) wurden bislang berechnet, aber nirgends in der Auswertung angezeigt oder mitgezählt.
+- Orden/Zelt-weite Punkte (Zeltbewertung, Spielwertung, Platzdienst, Küchendienst) tauchten in der Auswertung bislang überhaupt nicht auf, weder je Teilnehmer noch in der Orden/Zelt-Übersichtskarte.
+
+### DB-Änderungen
+
+Keine.
+
 ## v0.14.12 - Wiederkehrende Dienste, Tagesnavigation und Kartenausrichtung
 
 ### Neu
