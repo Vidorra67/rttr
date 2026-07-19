@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Services\DashboardService;
 use App\Support\Auth;
 use App\Support\Logger;
+use App\Support\Request;
 use App\Support\View;
 use Throwable;
 
@@ -38,7 +39,7 @@ final class HomeController
         ];
 
         try {
-            $dashboard = (new DashboardService())->data();
+            $dashboard = (new DashboardService())->data(Request::get('tag'));
         } catch (Throwable $exception) {
             Logger::error('Dashboard data failed', ['message' => $exception->getMessage()]);
         }

@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Support\Database;
 use App\Support\Logger;
+use DateTimeImmutable;
 use PDO;
 use Throwable;
 
@@ -22,7 +23,7 @@ final class DashboardService
     ) {
     }
 
-    public function data(): array
+    public function data(mixed $requestedDate = null): array
     {
         $activeCampYear = null;
         $dayTabs = [];
@@ -38,14 +39,15 @@ final class DashboardService
         $nextProgramItem = null;
         $todayMeals = [];
         $openDutiesToday = [];
+        $currentCampDate = null;
 
         try {
             $activeCampYear = $this->campYearService->active();
             if ($activeCampYear !== null) {
-                $dayTabs = $this->campYearService->dayTabs($activeCampYear);
+                $currentCampDate = $this->normalizeDateForCampYear($activeCampYear, $requestedDate);
+                $dayTabs = $this->campYearService->dayTabs($activeCampYear, $currentCampDate);
                 $orders = $this->orderService->allForCampYear((int) $activeCampYear['id']);
                 $stats['orders'] = count(array_filter($orders, static fn (array $order): bool => (int) $order['is_active'] === 1));
-                $currentCampDate = $this->campYearService->currentCampDate($activeCampYear);
                 if ($currentCampDate !== null) {
                     $nextProgramItem = $this->programService->nextForDate((int) $activeCampYear['id'], $currentCampDate);
                     $todayMeals = $this->mealService->groupedForDate((int) $activeCampYear['id'], $currentCampDate);
@@ -64,7 +66,7 @@ final class DashboardService
 
         return [
             'activeCampYear' => $activeCampYear,
-            'currentCampDate' => $this->campYearService->currentCampDate($activeCampYear),
+            'currentCampDate' => $currentCampDate,
             'dayLabel' => $this->campYearService->dayLabel($activeCampYear),
             'dayTabs' => $dayTabs,
             'orders' => $orders,
@@ -74,6 +76,39 @@ final class DashboardService
             'todayMeals' => $todayMeals,
             'openDutiesToday' => $openDutiesToday,
         ];
+    }
+
+    private function normalizeDateForCampYear(?array $campYear, mixed $value): ?string
+    {
+        if ($campYear === null) {
+            return null;
+        }
+
+        $candidate = trim((string) $value);
+        if ($candidate === '' || !$this->validDate($candidate)) {
+            return $this->campYearService->currentCampDate($campYear);
+        }
+
+        $date = new DateTimeImmutable($candidate . ' 00:00:00');
+        $start = new DateTimeImmutable((string) $campYear['starts_on'] . ' 00:00:00');
+        $end = new DateTimeImmutable((string) $campYear['ends_on'] . ' 00:00:00');
+
+        if ($date < $start) {
+            return $start->format('Y-m-d');
+        }
+        if ($date > $end) {
+            return $end->format('Y-m-d');
+        }
+        return $date->format('Y-m-d');
+    }
+
+    private function validDate(string $value): bool
+    {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return false;
+        }
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        return $date instanceof DateTimeImmutable && $date->format('Y-m-d') === $value;
     }
 
     private function sumOrderPointsForDate(int $campYearId, string $date): int
