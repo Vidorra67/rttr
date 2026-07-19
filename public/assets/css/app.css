@@ -247,6 +247,21 @@ hr {
 }
 .card + .card { margin-top: 16px; }
 
+/* Grid/flex row layouts already space cards via `gap` — the rule above is
+   meant for plain vertically stacked cards and must not leak into these. */
+.dashboard-grid .card + .card,
+.order-grid .card + .card,
+.meal-grid .card + .card,
+.score-summary-grid .card + .card,
+.task-grid .card + .card,
+.grid-two .card + .card,
+.import-grid .card + .card,
+.person-detail-grid .card + .card,
+.point-total-grid .card + .card,
+.exam-entry-grid .card + .card {
+  margin-top: 0;
+}
+
 .button {
   display: inline-flex;
   align-items: center;

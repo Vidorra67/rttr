@@ -16,6 +16,9 @@
 /public/setup.php
 /public/migration.php
 
+# Lokaler Dev-Server (php -S)
+/router.php
+
 # OS/Editor
 .DS_Store
 Thumbs.db
