@@ -191,7 +191,7 @@ $openDutiesToday = $dashboard['openDutiesToday'] ?? [];
         <div class="section-head section-head--compact">
             <div>
                 <p class="eyebrow">Orden/Zelte</p>
-                <h2><?= $orders === [] ? 'Noch keine Einheiten' : 'Aktive Einheiten' ?></h2>
+                <h2><?= $orders === [] ? 'Noch keine Orden/Zelte' : 'Aktive Orden/Zelte' ?></h2>
             </div>
             <?php if (Auth::can('orders.manage') && $activeCampYear !== null): ?>
                 <a class="button button--ghost" href="/admin/orden?camp_year_id=<?= e($activeCampYear['id']) ?>">Verwalten</a>
