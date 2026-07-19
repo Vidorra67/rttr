@@ -58,7 +58,7 @@ $canManage = $canManage ?? false;
     <form method="get" action="/admin/auswertung" class="card filter-card">
         <label>
             Orden/Zelt filtern
-            <select name="order_id" onchange="this.form.submit()">
+            <select name="order_id" data-autosubmit>
                 <option value="">Alle Orden/Zelte</option>
                 <?php foreach ($orders as $order): ?>
                     <?php if ((int) ($order['is_active'] ?? 0) !== 1) { continue; } ?>

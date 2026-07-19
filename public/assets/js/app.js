@@ -57,6 +57,16 @@
     });
   }
 
+  function initAutoSubmitSelects() {
+    document.querySelectorAll('[data-autosubmit]').forEach(function (select) {
+      select.addEventListener('change', function () {
+        if (select.form) {
+          select.form.submit();
+        }
+      });
+    });
+  }
+
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) {
       return;
@@ -70,5 +80,6 @@
 
   initPinPad();
   initSteppers();
+  initAutoSubmitSelects();
   registerServiceWorker();
 })();

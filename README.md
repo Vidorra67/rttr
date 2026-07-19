@@ -546,3 +546,11 @@ Behebt falsche Geburtstage aus dem Import und schützt erreichte Ränge gegen R�
 ## Hinweis v0.14.11
 
 Der Import vermeidet DATE-Vergleiche mit leeren Strings. Dadurch wird der Fehler `SQLSTATE[HY000]: General error: 1525 Incorrect DATE value: ''` beim erneuten Import behoben.
+
+## v0.14.12
+
+Küchendienst (3x täglich, an Frühstück/Mittagessen/Abendessen orientiert) und Platzdienst (1x täglich) werden jetzt automatisch für jeden Lagertag angelegt, sobald ein Lagerjahr angelegt oder aktiviert wird. Kein manuelles Anlegen mehr nötig.
+
+Außerdem behoben: Tages-Reiter auf der Übersicht und auf allen Ordnungspunkte-Seiten wechselten das Datum nicht zuverlässig; automatisch abschickende Auswahlfelder (Orden/Zelt-Filter) reagierten wegen der aktiven Content-Security-Policy nicht; Kartenreihen in mehrspaltigen Grids waren uneinheitlich ausgerichtet.
+
+Nach dem Update Migration ausführen (`public/migration.php` oder `php scripts/maintenance/migrate.php`), damit Küchendienst/Platzdienst auch für bereits bestehende Lagerjahre rückwirkend angelegt werden.

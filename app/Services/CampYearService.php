@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Support\Auth;
 use App\Support\Database;
+use App\Support\Logger;
 use DateInterval;
 use DatePeriod;
 use DateTimeImmutable;
@@ -68,6 +69,7 @@ final class CampYearService
             $pdo->commit();
 
             $this->audit('camp_years.created', 'camp_year', $id, ['name' => (string) $data['name'], 'is_active' => $isActive]);
+            $this->generateRecurringDuties($id);
             return $id;
         } catch (\Throwable $exception) {
             if ($pdo->inTransaction()) {
@@ -136,6 +138,7 @@ final class CampYearService
             $stmt->execute(['id' => $id]);
             $pdo->commit();
             $this->audit('camp_years.activated', 'camp_year', $id, ['name' => (string) $campYear['name']]);
+            $this->generateRecurringDuties($id);
         } catch (\Throwable $exception) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
@@ -226,6 +229,18 @@ final class CampYearService
         }
         if ($this->date((string) $data['ends_on']) < $this->date((string) $data['starts_on'])) {
             throw new RuntimeException('Enddatum darf nicht vor dem Startdatum liegen.');
+        }
+    }
+
+    private function generateRecurringDuties(int $campYearId): void
+    {
+        try {
+            (new DutyService())->generateRecurringDutiesForCampYear($campYearId);
+        } catch (\Throwable $exception) {
+            Logger::error('Recurring duty generation failed', [
+                'camp_year_id' => $campYearId,
+                'message' => $exception->getMessage(),
+            ]);
         }
     }
 

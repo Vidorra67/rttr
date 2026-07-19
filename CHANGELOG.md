@@ -1,3 +1,21 @@
+## v0.14.12 - Wiederkehrende Dienste, Tagesnavigation und Kartenausrichtung
+
+### Neu
+
+- Küchendienst (3x täglich, an Frühstück/Mittagessen/Abendessen orientiert) und Platzdienst (1x täglich) werden automatisch für jeden Lagertag angelegt, sobald ein Lagerjahr angelegt oder aktiviert wird. Kein manuelles Anlegen mehr nötig.
+
+### Behoben
+
+- Tages-Reiter auf der Übersicht änderten das angezeigte Datum nicht zuverlässig, weil die Startseite den `tag`-Parameter gar nicht auswertete.
+- Tages-Reiter auf allen Ordnungspunkte-Seiten (`/ordnung`, Zelt, Geschirr, Spiel, Dienst) wechselten das Datum ebenfalls nicht zuverlässig.
+- Die automatisch abschickenden Auswahlfelder (Orden/Zelt-Filter unter Zelt/Geschirr bewerten, Auswertung, Prüfungen, Orden/Zelte-Verwaltung) reagierten wegen der aktiven Content-Security-Policy nicht auf Auswahländerungen. Ausgelöst hatte das ein ausgelagertes `onchange`-Attribut, das der Browser stillschweigend blockiert; die Felder nutzen jetzt ein `data-autosubmit`-Attribut mit externem JavaScript.
+- Kartenreihen im Grid-Layout (Übersicht, Orden/Zelte, Auswertung, Zelt/Geschirr bewerten, WebDAV, geplante Aufgaben, Personen-Detailansicht, Prüfungen) waren uneinheitlich ausgerichtet, weil eine für Einzelspalten-Listen gedachte CSS-Regel auch in mehrspaltigen Grids griff.
+- Dashboard-Überschrift „Aktive Einheiten" hieß uneinheitlich anders als überall sonst im Programm; heißt jetzt „Aktive Orden/Zelte".
+
+### Datenbank
+
+- Migration `2026_06_25_000027_generate_recurring_duties.php` legt Küchendienst/Platzdienst auch für bereits bestehende Lagerjahre rückwirkend an. Bereits vorhandene Dienste werden nicht doppelt erzeugt.
+
 ## v0.14.11 - Import-Datumskompatibilität
 
 - Behebt MySQL/MariaDB-Fehler `Incorrect DATE value: ''` beim erneuten Import des Zeltlager Managers 2025.

@@ -25,7 +25,7 @@ $canManage = $canManage ?? false;
     <article class="card empty-state"><div class="empty-icon">P</div><h2>Kein aktives Lagerjahr</h2><p class="muted">Prüfungsergebnisse benötigen ein aktives Lagerjahr.</p></article>
 <?php else: ?>
     <form method="get" action="/admin/pruefungen" class="card filter-card">
-        <label>Orden/Zelt filtern<select name="order_id" onchange="this.form.submit()"><option value="">Alle Orden/Zelte</option><?php foreach (($orders ?? []) as $order): ?><?php if ((int) ($order['is_active'] ?? 0) !== 1) { continue; } ?><option value="<?= e($order['id']) ?>" <?= (int) ($selectedOrderId ?? 0) === (int) $order['id'] ? 'selected' : '' ?>><?= e($order['name']) ?></option><?php endforeach; ?></select></label>
+        <label>Orden/Zelt filtern<select name="order_id" data-autosubmit><option value="">Alle Orden/Zelte</option><?php foreach (($orders ?? []) as $order): ?><?php if ((int) ($order['is_active'] ?? 0) !== 1) { continue; } ?><option value="<?= e($order['id']) ?>" <?= (int) ($selectedOrderId ?? 0) === (int) $order['id'] ? 'selected' : '' ?>><?= e($order['name']) ?></option><?php endforeach; ?></select></label>
     </form>
 
     <?php if ($canManage): ?>

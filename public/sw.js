@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ritterlager-manager-v0.14.11';
+const CACHE_NAME = 'ritterlager-manager-v0.14.11-1';
 const SHELL_ASSETS = [
   '/offline.html',
   '/assets/css/app.css',

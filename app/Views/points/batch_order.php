@@ -35,7 +35,7 @@ $defaultPersonPoints = $isZelt ? 5 : 5;
     <form method="get" action="/punkte/<?= e($mode) ?>" class="card filter-card compact-filter">
         <input type="hidden" name="tag" value="<?= e($scoringDate) ?>">
         <label>Orden/Zelt
-            <select name="order_id" onchange="this.form.submit()">
+            <select name="order_id" data-autosubmit>
                 <option value="">Bitte auswählen</option>
                 <?php foreach ($orders as $order): ?>
                     <option value="<?= e($order['id']) ?>" <?= $selectedOrderId === (string) $order['id'] ? 'selected' : '' ?>><?= e($order['name']) ?></option>

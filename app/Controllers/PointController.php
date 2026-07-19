@@ -266,7 +266,7 @@ final class PointController
     private function competitionData(array $payload): array
     {
         $activeCampYear = $this->pointService->activeCampYear();
-        $activeDate = $this->pointService->normalizeDateForCampYear($activeCampYear, $payload['scoring_date'] ?? Request::get('tag', ''));
+        $activeDate = $this->pointService->normalizeDateForCampYear($activeCampYear, $payload['scoring_date'] ?: Request::get('tag', ''));
         $payload['scoring_date'] = $activeDate ?? '';
         return [
             'title' => 'Spielwertung erfassen',
@@ -282,7 +282,7 @@ final class PointController
     {
         $activeCampYear = $this->pointService->activeCampYear();
         $campYearId = $activeCampYear !== null ? (int) $activeCampYear['id'] : null;
-        $activeDate = $this->pointService->normalizeDateForCampYear($activeCampYear, $payload['scoring_date'] ?? Request::get('tag', ''));
+        $activeDate = $this->pointService->normalizeDateForCampYear($activeCampYear, $payload['scoring_date'] ?: Request::get('tag', ''));
         $payload['scoring_date'] = $activeDate ?? '';
         $orders = $this->pointService->orderOptions($campYearId);
         $orderId = filter_var($payload['order_id'] ?? Request::get('order_id', ''), FILTER_VALIDATE_INT);
@@ -305,7 +305,7 @@ final class PointController
     {
         $activeCampYear = $this->pointService->activeCampYear();
         $campYearId = $activeCampYear !== null ? (int) $activeCampYear['id'] : null;
-        $activeDate = $this->pointService->normalizeDateForCampYear($activeCampYear, $payload['scoring_date'] ?? Request::get('tag', ''));
+        $activeDate = $this->pointService->normalizeDateForCampYear($activeCampYear, $payload['scoring_date'] ?: Request::get('tag', ''));
         $payload['scoring_date'] = $activeDate ?? '';
         return [
             'title' => 'Küchendienst bewerten',
@@ -355,7 +355,7 @@ final class PointController
         $activeCampYear = $this->pointService->activeCampYear();
         $campYearId = $activeCampYear !== null ? (int) $activeCampYear['id'] : null;
         $query = trim((string) ($payload['q'] ?? Request::get('q', '')));
-        $requestedDate = $payload['scoring_date'] ?? Request::get('tag', '');
+        $requestedDate = $payload['scoring_date'] ?: Request::get('tag', '');
         $activeDate = $this->pointService->normalizeDateForCampYear($activeCampYear, $requestedDate);
         $payload['scoring_date'] = $activeDate ?? '';
 

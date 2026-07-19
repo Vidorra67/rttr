@@ -17,7 +17,7 @@ use App\Support\Auth;
 <?php if ($campYears !== []): ?>
     <form method="get" action="/admin/orden" class="card filter-card">
         <label>Lagerjahr
-            <select name="camp_year_id" onchange="this.form.submit()">
+            <select name="camp_year_id" data-autosubmit>
                 <?php foreach ($campYears as $year): ?>
                     <option value="<?= e($year['id']) ?>" <?= $campYear !== null && (int) $year['id'] === (int) $campYear['id'] ? 'selected' : '' ?>>
                         <?= e($year['name']) ?><?= (int) $year['is_active'] === 1 ? ' · aktiv' : '' ?>

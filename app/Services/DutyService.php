@@ -6,6 +6,8 @@ namespace App\Services;
 
 use App\Support\Auth;
 use App\Support\Database;
+use DateInterval;
+use DatePeriod;
 use DateTimeImmutable;
 use PDO;
 use RuntimeException;
@@ -379,6 +381,112 @@ final class DutyService
         }
         $nextIndex = ($currentIndex + 1) % count($orders);
         return $orders[$nextIndex];
+    }
+
+    public function generateRecurringDutiesForCampYear(int $campYearId): int
+    {
+        $stmt = Database::connection()->prepare('SELECT starts_on, ends_on FROM camp_years WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $campYearId]);
+        $campYear = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($campYear)) {
+            return 0;
+        }
+
+        $start = new DateTimeImmutable((string) $campYear['starts_on'] . ' 00:00:00');
+        $end = new DateTimeImmutable((string) $campYear['ends_on'] . ' 00:00:00');
+        if ($end < $start) {
+            return 0;
+        }
+
+        $platzdienstType = $this->findTypeByKey('platzdienst');
+        $kuechendienstType = $this->findTypeByKey('kuechendienst');
+        if ($platzdienstType === null && $kuechendienstType === null) {
+            return 0;
+        }
+
+        $mealTypes = (new MealService())->mealTypes();
+        $userId = $this->currentUserId();
+        $created = 0;
+
+        foreach (new DatePeriod($start, new DateInterval('P1D'), $end->modify('+1 day')) as $day) {
+            $date = $day->format('Y-m-d');
+
+            if ($platzdienstType !== null) {
+                $created += $this->ensureRecurringDuty(
+                    $campYearId,
+                    $date,
+                    (int) $platzdienstType['id'],
+                    'Platzdienst',
+                    null,
+                    $this->nullableString($platzdienstType['default_time_label'] ?? null),
+                    $userId
+                ) ? 1 : 0;
+            }
+
+            if ($kuechendienstType !== null) {
+                foreach ($mealTypes as $meal) {
+                    $created += $this->ensureRecurringDuty(
+                        $campYearId,
+                        $date,
+                        (int) $kuechendienstType['id'],
+                        'Küchendienst ' . $meal['label'],
+                        $meal['time'],
+                        $meal['label'],
+                        $userId
+                    ) ? 1 : 0;
+                }
+            }
+        }
+
+        if ($created > 0) {
+            $this->audit('duties.recurring_generated', 'camp_year', $campYearId, ['created' => $created]);
+        }
+
+        return $created;
+    }
+
+    private function ensureRecurringDuty(
+        int $campYearId,
+        string $dutyDate,
+        int $dutyTypeId,
+        string $title,
+        ?string $startsAt,
+        ?string $timeLabel,
+        ?int $userId
+    ): bool {
+        $pdo = Database::connection();
+        $exists = $pdo->prepare('SELECT id FROM duties
+            WHERE camp_year_id = :camp_year_id
+              AND duty_date = :duty_date
+              AND duty_type_id = :duty_type_id
+              AND title = :title
+              AND deleted_at IS NULL
+            LIMIT 1');
+        $exists->execute([
+            'camp_year_id' => $campYearId,
+            'duty_date' => $dutyDate,
+            'duty_type_id' => $dutyTypeId,
+            'title' => $title,
+        ]);
+        if ($exists->fetchColumn() !== false) {
+            return false;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO duties
+            (camp_year_id, duty_date, duty_type_id, starts_at, ends_at, time_label, title, description, status, created_by, updated_by, created_at, updated_at)
+            VALUES (:camp_year_id, :duty_date, :duty_type_id, :starts_at, NULL, :time_label, :title, NULL, 'offen', :created_by, :updated_by, NOW(), NOW())");
+        $stmt->execute([
+            'camp_year_id' => $campYearId,
+            'duty_date' => $dutyDate,
+            'duty_type_id' => $dutyTypeId,
+            'starts_at' => $startsAt !== null && $startsAt !== '' ? $startsAt . ':00' : null,
+            'time_label' => $timeLabel,
+            'title' => $title,
+            'created_by' => $userId,
+            'updated_by' => $userId,
+        ]);
+
+        return true;
     }
 
     private function assignments(int $dutyId): array
