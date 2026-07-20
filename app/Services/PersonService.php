@@ -241,6 +241,127 @@ final class PersonService
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function previousYearRoster(int $fromCampYearId, int $toCampYearId): array
+    {
+        $stmt = Database::connection()->prepare("SELECT p.id, p.display_name, p.nickname,
+                cps.order_id, cps.is_staff, cps.rank_label, cps.rank_level_id, cps.next_rank_level_id, cps.next_rank_label, cps.promotion_status,
+                o.name AS order_name, o.short_name AS order_short_name,
+                rl.label AS rank_level_label, rl.key_name AS rank_level_key,
+                nrl.label AS next_rank_level_label, nrl.key_name AS next_rank_level_key
+            FROM persons p
+            INNER JOIN camp_person_statuses cps ON cps.person_id = p.id AND cps.camp_year_id = :from_camp_year_id
+            LEFT JOIN orders o ON o.id = cps.order_id
+            LEFT JOIN rank_levels rl ON rl.id = cps.rank_level_id
+            LEFT JOIN rank_levels nrl ON nrl.id = cps.next_rank_level_id
+            WHERE p.deleted_at IS NULL
+              AND p.is_active = 1
+              AND cps.is_participant = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM camp_person_statuses existing
+                  WHERE existing.person_id = p.id
+                    AND existing.camp_year_id = :to_camp_year_id
+                    AND existing.is_participant = 1
+              )
+            ORDER BY o.sort_order ASC, p.display_name ASC");
+        $stmt->execute([
+            'from_camp_year_id' => $fromCampYearId,
+            'to_camp_year_id' => $toCampYearId,
+        ]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($rows as &$row) {
+            $confirmed = (string) ($row['promotion_status'] ?? '') === 'bestaetigt'
+                && ((int) ($row['next_rank_level_id'] ?? 0) > 0 || !empty($row['next_rank_label']));
+            $row['promotion_confirmed'] = $confirmed;
+            $row['will_become_rank_label'] = $confirmed
+                ? (string) ($row['next_rank_level_label'] ?? $row['next_rank_label'])
+                : (string) ($row['rank_level_label'] ?? $row['rank_label'] ?? 'offen');
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    public function transferParticipants(int $fromCampYearId, int $toCampYearId, array $personIds): int
+    {
+        if ($personIds === []) {
+            return 0;
+        }
+
+        if ($this->campYearService->find($toCampYearId) === null) {
+            throw new RuntimeException('Ziel-Lagerjahr wurde nicht gefunden.');
+        }
+
+        $roster = [];
+        foreach ($this->previousYearRoster($fromCampYearId, $toCampYearId) as $row) {
+            $roster[(int) $row['id']] = $row;
+        }
+
+        $pdo = Database::connection();
+        $transferred = 0;
+
+        foreach ($personIds as $rawPersonId) {
+            $personId = filter_var($rawPersonId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($personId === false || !isset($roster[$personId])) {
+                continue;
+            }
+            $row = $roster[$personId];
+
+            $rankLevelId = null;
+            $rankLabel = null;
+            $sourceKey = $row['promotion_confirmed']
+                ? ($row['next_rank_level_key'] ?? null)
+                : ($row['rank_level_key'] ?? null);
+            if ($sourceKey !== null && $sourceKey !== '') {
+                $translated = $this->rankLevelForKey($pdo, $toCampYearId, (string) $sourceKey);
+                if ($translated !== null) {
+                    $rankLevelId = (int) $translated['id'];
+                    $rankLabel = (string) $translated['label'];
+                }
+            }
+            if ($rankLabel === null) {
+                $rankLabel = (string) $row['will_become_rank_label'];
+            }
+
+            $orderId = null;
+            if (!empty($row['order_name'])) {
+                $orderStmt = $pdo->prepare('SELECT id FROM orders WHERE camp_year_id = :camp_year_id AND name = :name LIMIT 1');
+                $orderStmt->execute(['camp_year_id' => $toCampYearId, 'name' => (string) $row['order_name']]);
+                $foundOrderId = $orderStmt->fetchColumn();
+                $orderId = $foundOrderId !== false ? (int) $foundOrderId : null;
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO camp_person_statuses
+                (camp_year_id, person_id, is_participant, is_staff, participant_status, staff_status, order_id, rank_label, rank_level_id, next_rank_level_id, next_rank_label, promotion_status, created_at, updated_at)
+                VALUES (:camp_year_id, :person_id, 1, :is_staff, 'angemeldet', 'aktiv', :order_id, :rank_label, :rank_level_id, NULL, NULL, 'offen', NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    is_participant = 1,
+                    is_staff = GREATEST(is_staff, VALUES(is_staff)),
+                    order_id = VALUES(order_id),
+                    rank_label = VALUES(rank_label),
+                    rank_level_id = VALUES(rank_level_id),
+                    updated_at = NOW()");
+            $stmt->execute([
+                'camp_year_id' => $toCampYearId,
+                'person_id' => $personId,
+                'is_staff' => (int) ($row['is_staff'] ?? 0) === 1 ? 1 : 0,
+                'order_id' => $orderId,
+                'rank_label' => $this->nullableString($rankLabel),
+                'rank_level_id' => $rankLevelId,
+            ]);
+            $transferred++;
+
+            $this->audit('camp_person_statuses.rolled_over', 'person', $personId, [
+                'from_camp_year_id' => $fromCampYearId,
+                'to_camp_year_id' => $toCampYearId,
+                'rank_label' => $rankLabel,
+                'promotion_applied' => $row['promotion_confirmed'],
+            ]);
+        }
+
+        return $transferred;
+    }
+
     public function create(array $data): int
     {
         $this->validatePersonData($data);

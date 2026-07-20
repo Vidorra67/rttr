@@ -560,3 +560,9 @@ Nach dem Update Migration ausführen (`public/migration.php` oder `php scripts/m
 Die Auswertung zeigt jetzt eine echte Gesamtpunktzahl je Teilnehmer: persönliche Punkte, die vollen Orden/Zelt-Punkte des zugeordneten Ordens und Prüfungspunkte aus den Lerneinheiten-Ergebnissen wurden bislang getrennt geführt und teils gar nicht angezeigt. Rangaufstiegs-Schwellen prüfen jetzt gegen diese Gesamtsumme. Die Zwischenstand-Tabelle zeigt eine Aufschlüsselung, der CSV-Export eigene Spalten je Anteil.
 
 Keine Migration nötig.
+
+## v0.14.14
+
+Neuer Bereich „Teilnehmer übernehmen" unter `/admin/lagerjahre`: Teilnehmer aus einem früheren Lagerjahr können gezielt per Checkliste (nichts vorausgewählt) ins neue Lagerjahr übernommen werden. Ein bestätigter Rangaufstieg wird dabei automatisch als neuer Rang gesetzt, Orden/Zelt und Rang werden korrekt auf die eigenen Datensätze des neuen Lagerjahres übersetzt. Bisher musste das komplett manuell nachgehalten werden, mit dem Risiko, einen bestätigten Aufstieg einfach zu vergessen.
+
+Keine Migration nötig.

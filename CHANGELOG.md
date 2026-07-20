@@ -1,3 +1,19 @@
+## v0.14.14 - Teilnehmer ins Folgejahr übernehmen
+
+### Neu
+
+- Neuer Bereich „Teilnehmer übernehmen" unter Lagerjahre-Verwaltung (`/admin/lagerjahre/uebernahme?to=<Lagerjahr-ID>`). Zeigt die Teilnehmerliste eines früheren Lagerjahres mit Rang bisher/Rang danach; per Checkliste wird ausgewählt, wer tatsächlich wieder dabei ist. Kein Teilnehmer ist vorausgewählt.
+- Für ausgewählte Teilnehmer wird ein bestätigter Rangaufstieg (Status „Bestätigt" unter Prüfungsergebnisse → Rang für nächstes Jahr) automatisch als neuer Rang im Zieljahr übernommen. Ohne bestätigten Aufstieg bleibt der bisherige Rang erhalten. Rang und Orden/Zelt werden dabei korrekt auf die jeweils eigenen Datensätze des Zieljahres übersetzt.
+- Bereits im Zieljahr erfasste Teilnehmer werden in der Liste nicht erneut angezeigt.
+
+### Behoben
+
+- Ein bestätigter Rangaufstieg wurde bisher nirgends automatisch angewendet. Er war rein informativ auf dem Personendatensatz sichtbar; jede Übernahme ins Folgejahr musste manuell nachvollzogen werden, mit dem Risiko, den Aufstieg schlicht zu vergessen.
+
+### DB-Änderungen
+
+Keine.
+
 ## v0.14.13 - Gesamtpunkte in der Auswertung
 
 ### Neu

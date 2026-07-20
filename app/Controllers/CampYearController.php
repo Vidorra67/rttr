@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\CampYearService;
+use App\Services\PersonService;
 use App\Support\Auth;
 use App\Support\Csrf;
 use App\Support\Flash;
@@ -152,6 +153,71 @@ final class CampYearController
         }
 
         Response::redirect('/admin/lagerjahre');
+        return '';
+    }
+
+    public function rosterTransfer(): string
+    {
+        if (!Auth::requirePermission('camp_years.manage')) {
+            return '';
+        }
+
+        $toId = Request::intFromGet('to');
+        $toCampYear = $toId !== null ? $this->campYearService->find($toId) : null;
+        if ($toId === null || $toCampYear === null) {
+            Response::html(View::render('errors/404', ['path' => '/admin/lagerjahre/uebernahme']), 404);
+            return '';
+        }
+
+        $earlierYears = array_values(array_filter(
+            $this->campYearService->all(),
+            static fn (array $year): bool => (int) $year['id'] !== $toId
+                && strtotime((string) $year['starts_on']) < strtotime((string) $toCampYear['starts_on'])
+        ));
+
+        $fromId = Request::intFromGet('from');
+        $fromCampYear = $fromId !== null ? $this->campYearService->find($fromId) : null;
+        if ($fromCampYear === null) {
+            $fromCampYear = $earlierYears[0] ?? null;
+        }
+
+        $roster = $fromCampYear !== null
+            ? (new PersonService())->previousYearRoster((int) $fromCampYear['id'], $toId)
+            : [];
+
+        return View::render('camp_years/roster_transfer', [
+            'title' => 'Teilnehmer übernehmen',
+            'toCampYear' => $toCampYear,
+            'fromCampYear' => $fromCampYear,
+            'earlierYears' => $earlierYears,
+            'roster' => $roster,
+        ]);
+    }
+
+    public function storeRosterTransfer(): string
+    {
+        if (!$this->guardWrite()) {
+            return '';
+        }
+
+        $toId = Request::intFromPost('to');
+        $fromId = Request::intFromPost('from');
+        $personIds = Request::post('person_ids', []);
+
+        if ($toId === null || $fromId === null) {
+            Response::html(View::render('errors/404', ['path' => '/admin/lagerjahre/uebernahme']), 404);
+            return '';
+        }
+
+        try {
+            $count = (new PersonService())->transferParticipants($fromId, $toId, is_array($personIds) ? $personIds : []);
+            Flash::add('success', $count . ' Teilnehmer wurden übernommen.');
+        } catch (Throwable $exception) {
+            Logger::error('Roster transfer failed', ['from' => $fromId, 'to' => $toId, 'message' => $exception->getMessage()]);
+            Flash::add('error', $exception->getMessage());
+        }
+
+        Response::redirect('/admin/lagerjahre/uebernahme?to=' . $toId . '&from=' . $fromId);
         return '';
     }
 

@@ -41,6 +41,7 @@ use App\Support\Csrf;
                 <?php if (Auth::can('camp_years.manage')): ?>
                     <div class="management-actions">
                         <a class="button button--ghost" href="/admin/lagerjahre/bearbeiten?id=<?= e($campYear['id']) ?>">Bearbeiten</a>
+                        <a class="button button--ghost" href="/admin/lagerjahre/uebernahme?to=<?= e($campYear['id']) ?>">Teilnehmer übernehmen</a>
                         <?php if (!$isActive): ?>
                             <form method="post" action="/admin/lagerjahre/aktiv" class="inline-form">
                                 <?= Csrf::input() ?>

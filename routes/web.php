@@ -110,6 +110,8 @@ $router->post('/admin/lagerjahre', [CampYearController::class, 'store']);
 $router->get('/admin/lagerjahre/bearbeiten', [CampYearController::class, 'edit']);
 $router->post('/admin/lagerjahre/speichern', [CampYearController::class, 'update']);
 $router->post('/admin/lagerjahre/aktiv', [CampYearController::class, 'activate']);
+$router->get('/admin/lagerjahre/uebernahme', [CampYearController::class, 'rosterTransfer']);
+$router->post('/admin/lagerjahre/uebernahme', [CampYearController::class, 'storeRosterTransfer']);
 
 $router->get('/admin/orden', [OrderController::class, 'index']);
 $router->get('/admin/orden/neu', [OrderController::class, 'create']);
